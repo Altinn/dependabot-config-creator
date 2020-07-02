@@ -1,4 +1,4 @@
-# DependabotConfigCreator
+# Dependabot Config Creator
 
 Tool for generating a [version 2 dependabot.yml file](https://docs.github.com/en/github/administering-a-repository/configuration-options-for-dependency-updates).
 
