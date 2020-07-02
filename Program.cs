@@ -1,5 +1,7 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
+using DependabotConfigCreator.Interfaces;
 
 namespace DependabotConfigCreator
 {
@@ -8,8 +10,8 @@ namespace DependabotConfigCreator
         static void Main(string[] args)
         {
             // Validate arguments
-            if (args.Length != 2 
-                || !Directory.Exists(args[0]) 
+            if (args.Length != 2
+                || !Directory.Exists(args[0])
                 || !Directory.Exists(args[1]))
             {
                 Console.WriteLine("Usage: ");
@@ -20,39 +22,24 @@ namespace DependabotConfigCreator
                 Console.WriteLine("Both directories must exist.");
                 return;
             }
-                
-            var scanner = new Scanner();
-            var fileGenerator = new FileGenerator();
 
-            var nugetFiles = scanner.GetCsProjects(args[0], true);
-            var dockerFiles = scanner.GetDockerProjects(args[0], true);
-            var mavenFiles = scanner.GetMavenProjects(args[0], true);
-            var npmFiles = scanner.GetNpmProjects(args[0], true);
+            var modules = System.Reflection.Assembly.GetExecutingAssembly().GetTypes().Where(t => typeof(IPackageEcosystem).IsAssignableFrom(t) && t.IsClass).OrderBy(t => t.Name);
 
-
-            foreach (var nuget in nugetFiles)
+            var generator = new FileGenerator();
+            foreach (var mod in modules)
             {
-                Console.WriteLine(nuget);
-                fileGenerator.GenerateNugetEntry(nuget);
+                var ecosystem = Activator.CreateInstance(mod) as IPackageEcosystem;
+                var packages = ecosystem.GetEntries(args[0], true);
+
+                foreach (var package in packages)
+                {
+                    generator.GenerateEntry(package);
+                }
             }
 
-            foreach (var docker in dockerFiles)
-            {
-                fileGenerator.GenerateDockerEntry(docker);
-            }
-
-            foreach (var npm in npmFiles)
-            {
-                fileGenerator.GenerateNpmEntry(npm);
-            }
-
-            foreach (var maven in mavenFiles)
-            {
-                fileGenerator.GenerateMavenEntry(maven);
-            }
 
             var outputFileName = Path.Combine(args[1], "dependabot.yml");
-            fileGenerator.GenerateFile(outputFileName);
+            generator.GenerateFile(outputFileName);
 
             Console.WriteLine($"File has been generated at {outputFileName}");
         }

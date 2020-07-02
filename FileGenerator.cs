@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Text;
+using DependabotConfigCreator.Interfaces;
 
 namespace DependabotConfigCreator
 {
@@ -14,44 +15,27 @@ namespace DependabotConfigCreator
             sb.AppendLine("updates:");
         }
 
-        public void GenerateDockerEntry(string directoryName)
+        public void GenerateEntry(Package package)
         {
-            GenerateEntry("docker", directoryName);
-        }
+            if (package == null)
+                throw new ArgumentNullException(nameof(package));
 
-        public void GenerateEntry(string provider, string directoryName, bool productionOnly = false)
-        {
-            if (string.IsNullOrEmpty(directoryName))
-                directoryName = "/";
-                
-            sb.AppendLine($"  - package-ecosystem: {provider}");
-            sb.AppendLine($"    directory: \"{directoryName}\"");
+            if (string.IsNullOrEmpty(package.Directory))
+                package.Directory = "/";
+
+            sb.AppendLine($"  - package-ecosystem: {package.EcoSystem}");
+            sb.AppendLine($"    directory: \"{package.Directory}\"");
             sb.AppendLine($"    schedule: ");
-            sb.AppendLine($"      interval: daily");
+            sb.AppendLine($"      interval: {package.Interval}");
             sb.AppendLine($"      time: \"04:00\"");
-            sb.AppendLine($"    open-pull-requests-limit: 40");
-            
-            if (productionOnly)
+            sb.AppendLine($"    open-pull-requests-limit: {package.PullRequestLimit}");
+
+            if (package.ProductionOnly)
             {
                 sb.AppendLine($"    allow:");
                 sb.AppendLine($"      - dependency-type: \"production\"");
             }
 
-        }
-
-        public void GenerateNpmEntry(string directoryName)
-        {
-            GenerateEntry("npm", directoryName, productionOnly: true);
-        }
-
-        public void GenerateMavenEntry(string directoryName)
-        {
-            GenerateEntry("maven", directoryName);
-        }
-
-        public void GenerateNugetEntry(string directoryName)
-        {
-            GenerateEntry("nuget", directoryName);
         }
 
         public void GenerateFile(string fileName)
