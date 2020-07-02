@@ -15,7 +15,8 @@ namespace DependabotConfigCreator.Implementation
                 {
                     EcoSystem = EcoSystem,
                     Directory = dir,
-                    Interval = "daily"
+                    Interval = "daily",
+                    ProductionOnly = true
                 };
             }
         }
