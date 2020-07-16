@@ -5,11 +5,8 @@ Tool for generating a [version 2 dependabot.yml file](https://docs.github.com/en
 ## Usage
 
 ```shell
-dotnet run {srcDirectory} {dstDirectory}
+dotnet run --help
 ```
-
-- srcDirectory - Where to start searching for projects
-- dstDirectory - Where to place the dependabot.yml file
 
 ## Limitations
 

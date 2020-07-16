@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
+using CommandLine;
 using DependabotConfigCreator.Interfaces;
 
 namespace DependabotConfigCreator
@@ -8,28 +9,33 @@ namespace DependabotConfigCreator
     class Program
     {
         static void Main(string[] args)
-        {
-            // Validate arguments
-            if (args.Length != 2
-                || !Directory.Exists(args[0])
-                || !Directory.Exists(args[1]))
-            {
-                Console.WriteLine("Usage: ");
-                Console.WriteLine("dotnet run {srcDirectory} {dstDirectory}");
-                Console.WriteLine("  - srcDirectory - Where to start searching for projects ");
-                Console.WriteLine("  - dstDirectory - Where to place the dependabot.yml file");
+        {           
+            int result = CommandLine.Parser.Default.ParseArguments<Options>(args)
+                .MapResult(
+                    (Options o) => RunOptions(o),
+                    err => 1
+                );
 
-                Console.WriteLine("Both directories must exist.");
-                return;
+        }
+
+        static int RunOptions(Options o)
+        {
+            if (!Directory.Exists(o.SourceDirectory) || !Directory.Exists(o.TargetDirectory))
+            {
+                Console.WriteLine("Directories must exist");
+
+                return 1;
             }
 
-            var modules = System.Reflection.Assembly.GetExecutingAssembly().GetTypes().Where(t => typeof(IPackageEcosystem).IsAssignableFrom(t) && t.IsClass).OrderBy(t => t.Name);
+            Scanner.ExcludeTests = o.ExcludeTests;
 
+            var modules = System.Reflection.Assembly.GetExecutingAssembly().GetTypes().Where(t => typeof(IPackageEcosystem).IsAssignableFrom(t) && t.IsClass).OrderBy(t => t.Name);
+            
             var generator = new FileGenerator();
             foreach (var mod in modules)
             {
                 var ecosystem = Activator.CreateInstance(mod) as IPackageEcosystem;
-                var packages = ecosystem.GetEntries(args[0], true);
+                var packages = ecosystem.GetEntries(o.SourceDirectory, o.Recursive);
 
                 foreach (var package in packages)
                 {
@@ -38,10 +44,13 @@ namespace DependabotConfigCreator
             }
 
 
-            var outputFileName = Path.Combine(args[1], "dependabot.yml");
+            var outputFileName = Path.Combine(o.TargetDirectory, "dependabot.yml");
             generator.GenerateFile(outputFileName);
 
             Console.WriteLine($"File has been generated at {outputFileName}");
+
+
+            return 0;
         }
     }
 }

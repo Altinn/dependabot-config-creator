@@ -10,8 +10,13 @@ namespace DependabotConfigCreator
     /// </summary>
     class Scanner
     {
-        public static string[] DefaultIgnorePaths = new[] { @"\node_modules\", @"\bin\", "test" };
-
+        private static string[] _defaultIgnorePathWithTest = new[] { @"\node_modules\", @"\bin\", "test" };
+        private static string[] _defaultIgnorePathsWithoutTest = new[] { @"\node_modules\", @"\bin\" };
+        public static string[] DefaultIgnorePaths => ExcludeTests ?   _defaultIgnorePathWithTest : _defaultIgnorePathsWithoutTest;
+                                            
+        public static bool ExcludeTests { get; set;} = false;
+            
+        
         public static IEnumerable<string> GetDirectoryWithFiles(string startDirectory, string filePattern, string[] ignorePaths, bool recursive)
         {
             return System.IO.Directory.GetFiles(startDirectory, filePattern, recursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly)
